@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="古文トレ">
+<meta name="theme-color" content="#f3ecdc">
+<title>古文トレーニング</title>
+<style>
+:root{--paper:#f3ecdc;--card:#fbf6ea;--ink:#2a2521;--sub:#776c5f;--line:#cdbf9f;--shu:#c0392b;--shu-soft:#f3d6cf;--ai:#2c4a66;--ai-soft:#dbe3ea;--gold:#a8842c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+body{font-family:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+ background-image:radial-gradient(rgba(120,100,60,.05) 1px,transparent 1px);background-size:6px 6px}
+button{font-family:inherit;color:inherit}
+#app{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px)}
+h1{font-size:28px;letter-spacing:.2em;margin:8px 0 4px;text-align:center;font-weight:800}
+.tagline{text-align:center;color:var(--sub);font-size:13px;margin-bottom:14px}
+.bar{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--sub);margin:6px 0 14px}
+.bar b{color:var(--ink);font-size:16px}
+.btn{border:1.5px solid var(--ink);background:var(--card);border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700}
+.btn.small{padding:6px 10px;font-size:13px;font-weight:600;border-width:1px}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.shu{border-color:var(--shu);color:var(--shu)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.frame{position:relative;aspect-ratio:1;border:1.5px solid var(--ink);border-radius:6px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:17px;padding:4px}
+.frame small{font-size:11px;color:var(--sub);font-weight:600}
+.frame.locked{opacity:.45;border-style:dashed}
+.frame .dots{display:flex;gap:4px}
+.frame .dots i{width:8px;height:8px;border-radius:50%;border:1px solid var(--shu)}
+.frame .dots i.on{background:var(--shu)}
+.hanko{position:absolute;inset:14%;border:3px solid var(--shu);border-radius:10px;color:var(--shu);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;letter-spacing:.05em;transform:rotate(-10deg);background:rgba(251,246,234,.75);writing-mode:vertical-rl}
+.scroll{margin:16px 0;padding:18px;border:2px solid var(--gold);background:linear-gradient(#fffaf0,#f6ecd4);text-align:center;border-radius:4px;font-size:26px;font-weight:900;letter-spacing:.3em;color:var(--shu)}
+.note{font-size:12px;color:var(--sub);line-height:1.7;margin-top:14px}
+.head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.head .t{flex:1;font-weight:800;font-size:17px}
+.head .n{font-size:13px;color:var(--sub)}
+.back{border:none;background:none;font-size:24px;padding:8px 14px 8px 4px;min-width:48px;min-height:44px;text-align:left}
+#dlg{position:fixed;inset:0;background:rgba(42,37,33,.45);display:none;align-items:center;justify-content:center;z-index:20;padding:24px}
+#dlg.on{display:flex}
+#dlg .box{background:var(--card);border:1.5px solid var(--ink);border-radius:12px;padding:20px;max-width:340px;width:100%}
+#dlg .msg{font-size:16px;font-weight:700;line-height:1.7;margin-bottom:16px}
+#dlg .row{display:flex;gap:10px}
+#dlg .row .btn{flex:1}
+.mode{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1.5px solid var(--ink);border-radius:12px;background:var(--card);padding:14px;margin-bottom:10px}
+.mode .num{font-size:26px;font-weight:900;color:var(--ai);width:32px;text-align:center}
+.mode .mt{font-weight:800;font-size:17px}
+.mode .md{font-size:12px;color:var(--sub);margin-top:2px}
+.mode .st{margin-left:auto;font-size:13px;font-weight:800}
+.mode .st.done{color:var(--shu)}
+.mode.locked{opacity:.4;border-style:dashed}
+.streak{text-align:right;font-size:12px;color:var(--sub);margin:-6px 0 8px}
+.card{background:var(--card);border:1.5px solid var(--ink);border-radius:12px;padding:16px;margin-bottom:14px}
+.lbl{display:inline-block;font-size:11px;font-weight:800;color:var(--paper);background:var(--ai);border-radius:4px;padding:2px 8px;margin-bottom:8px}
+.lbl.shu{background:var(--shu)}
+.q{font-size:18px;line-height:1.7;font-weight:700}
+.verb{font-size:40px;font-weight:900;text-align:center;margin:6px 0 4px;letter-spacing:.1em}
+.prompt{font-size:15px;font-weight:700;margin:4px 0 10px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choices.two{grid-template-columns:1fr}
+.ch{border:1.5px solid var(--ink);background:var(--card);border-radius:10px;min-height:56px;font-size:20px;font-weight:800;padding:8px}
+.ch.right{background:var(--shu);border-color:var(--shu);color:#fff}
+.ch.bad{background:#ddd5c4;color:var(--sub);text-decoration:line-through}
+.ch:disabled{opacity:1}
+.fb{margin-top:12px;font-size:15px;line-height:1.7;padding:10px 12px;border-radius:8px;background:var(--ai-soft)}
+.fb.ng{background:var(--shu-soft)}
+.fb b{color:var(--shu)}
+.done0{font-size:14px;margin:0 0 10px;padding:6px 10px;border-radius:6px;background:var(--ai-soft)}
+.done0.ng{background:var(--shu-soft)}
+.next{display:block;width:100%;margin-top:14px}
+table.kt{width:100%;border-collapse:collapse;table-layout:fixed;background:#fffaf0;margin-bottom:12px}
+.kt th,.kt td{border:1px solid var(--line);text-align:center;padding:5px 0;word-break:break-all}
+.kt th{font-size:11px;font-weight:700;background:var(--ai-soft);color:var(--ai)}
+.kt td.sub{font-size:9px;color:var(--sub);padding:3px 0;line-height:1.2}
+.kt td.v{font-size:17px;font-weight:800;height:44px}
+.kt td.kihon{font-size:14px;background:var(--ai-soft)}
+.kt td.cur{background:var(--shu-soft);outline:2px solid var(--shu);outline-offset:-2px;color:var(--shu)}
+.kt td.miss{color:var(--shu)}
+.cellmsg{font-size:14px;min-height:22px;color:var(--shu);font-weight:700;margin-bottom:6px}
+.tatewrap{display:flex;justify-content:center;margin-bottom:8px}
+.tate{writing-mode:vertical-rl;height:250px;font-size:23px;line-height:2.3;padding:14px 18px;background:#fffaf0;border:1px solid var(--line);border-radius:6px;letter-spacing:.06em}
+.tate u{text-decoration:underline 2px var(--shu);text-underline-position:right;text-underline-offset:4px;color:var(--shu);font-weight:800}
+.tate rt{font-size:10px}
+.src{text-align:center;font-size:12px;color:var(--sub);margin-bottom:8px}
+.tr{font-size:14px;line-height:1.7;background:#fffaf0;border:1px dashed var(--line);border-radius:6px;padding:8px 10px;margin-bottom:12px}
+.center{text-align:center}
+.big{font-size:22px;font-weight:900;margin:24px 0 8px}
+#fx{position:fixed;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:10}
+.maru{width:170px;height:170px;border:12px solid var(--shu);border-radius:50%;opacity:0;animation:maru .7s ease-out}
+@keyframes maru{0%{transform:scale(.4);opacity:0}30%{transform:scale(1.05);opacity:.85}100%{transform:scale(1);opacity:0}}
+.fude{font-size:84px;font-weight:900;color:var(--shu);writing-mode:vertical-rl;letter-spacing:.1em;text-shadow:2px 2px 0 rgba(0,0,0,.08);opacity:0;animation:fude 1.6s ease-out}
+@keyframes fude{0%{transform:scale(1.6);opacity:0}20%{transform:scale(1);opacity:1}75%{opacity:1}100%{opacity:0}}
+.frame .hanko{inset:auto;right:4px;bottom:4px;width:44%;height:44%;font-size:13px;border-width:2px;border-radius:6px}
+.stampbig{position:relative;width:150px;height:150px;margin:18px auto}
+.stampbig .hanko{inset:0;font-size:52px;border-width:6px;animation:stamp .5s ease-out}
+@keyframes stamp{0%{transform:scale(2) rotate(-10deg);opacity:0}100%{transform:scale(1) rotate(-10deg);opacity:1}}
+.set{display:flex;flex-direction:column;gap:10px}
+input[type=file]{display:none}
+.choices.many{grid-template-columns:1fr 1fr}
+.choices.many .ch{min-height:48px;font-size:15px!important}
+.yomi{font-size:18px;color:var(--sub);font-weight:700;letter-spacing:0}
+.patcard{font-size:13px;line-height:1.8;background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin-bottom:12px}
+.patcard b{color:var(--shu);font-size:15px}
+.tag{display:inline-block;font-size:11px;color:var(--ai);border:1px solid var(--ai);border-radius:4px;padding:1px 6px;margin-bottom:8px}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="fx"></div>
+<div id="dlg"><div class="box"><div class="msg"></div><div class="row"></div></div></div>
+<input type="file" id="imp" accept="application/json,.json">
+<script>
+/* ====== 基本データ ====== */
+const ROWS={'ア':'あいうえお','カ':'かきくけこ','ガ':'がぎぐげご','サ':'さしすせそ','ザ':'ざじずぜぞ','タ':'たちつてと','ダ':'だぢづでど','ナ':'なにぬねの','ハ':'はひふへほ','バ':'ばびぶべぼ','マ':'まみむめも','ヤ':'やいゆえよ','ラ':'らりるれろ','ワ':'わゐうゑを'};
+const ALL_GYO=Object.keys(ROWS);
+const DAN=['a段','i段','u段','e段','o段'];
+const FORMS=['未然形','連用形','終止形','連体形','已然形','命令形'];
+const SETSUGO=['ず・む','たり・て','。','とき・こと','ど・ども','。'];
+const TYPES=[
+ {id:'yodan',name:'四段',full:'四段活用',pat:[[0],[1],[2],[2],[3],[3]],zd:0,patTxt:'a・i・u・u・e・e'},
+ {id:'shimo2',name:'下二段',full:'下二段活用',pat:[[3],[3],[2],[2,'る'],[2,'れ'],[3,'よ']],zd:3,patTxt:'e・e・u・uる・uれ・eよ'},
+ {id:'kami2',name:'上二段',full:'上二段活用',pat:[[1],[1],[2],[2,'る'],[2,'れ'],[1,'よ']],zd:1,patTxt:'i・i・u・uる・uれ・iよ'},
+ {id:'kami1',name:'上一段',full:'上一段活用',pat:[[1],[1],[1,'る'],[1,'る'],[1,'れ'],[1,'よ']],zd:1,patTxt:'i・i・iる・iる・iれ・iよ',memo:'ひ・い・き・に・み・ゐる（干る・射る・鋳る・着る・煮る・似る・見る・居る・率る など）'},
+ {id:'shimo1',name:'下一段',full:'下一段活用',pat:[[3],[3],[3,'る'],[3,'る'],[3,'れ'],[3,'よ']],zd:3,patTxt:'e・e・eる・eる・eれ・eよ',memo:'蹴る（一語だけ）'},
+ {id:'ka',name:'カ変',full:'カ行変格活用',fixed:['こ','き','く','くる','くれ','こ（よ）'],zd:4,patTxt:'o・i・u・uる・uれ・o（よ）',memo:'来（一語だけ）'},
+ {id:'sa',name:'サ変',full:'サ行変格活用',pat:[[3],[1],[2],[2,'る'],[2,'れ'],[3,'よ']],zd:3,patTxt:'e・i・u・uる・uれ・eよ',memo:'す・おはす（二語だけ）'},
+ {id:'na',name:'ナ変',full:'ナ行変格活用',pat:[[0],[1],[2],[2,'る'],[2,'れ'],[3]],zd:0,patTxt:'a・i・u・uる・uれ・e',memo:'死ぬ・往ぬ（去ぬ）（二語だけ）'},
+ {id:'ra',name:'ラ変',full:'ラ行変格活用',pat:[[0],[1],[1],[2],[3],[3]],zd:0,patTxt:'a・i・i・u・e・e',memo:'あり・居り・侍り・いまそかり（四語だけ）'}];
+const TIDX={};TYPES.forEach((T,i)=>TIDX[T.id]=i);
+const MODES=[
+ {id:'h',name:'判別',desc:'暗記語 →「ず」を付けて活用の種類を見分ける'},
+ {id:'t',name:'活用表',desc:'語幹・六つの活用形・行を一マスずつ埋める'},
+ {id:'k',name:'基本形',desc:'古文の傍線部から基本形を答える'}];
+const UNLEARNED='まだ習っていない活用';
+
+function formsOf(T,row){
+ if(T.fixed) return T.fixed.slice();
+ const R=ROWS[row];return T.pat.map(([i,s])=>R[i]+(s||''));
+}
+
+/* ====== 判別用の動詞（表示:語幹の前部分:行:読み:補足） ====== */
+const HB_SRC={
+yodan:`書く:書:カ 仰ぐ:仰:ガ:あふぐ 隠す:隠:サ 持つ:持:タ 言ふ:言:ハ 遊ぶ:遊:バ 読む:読:マ 狩る:狩:ラ 泣く:泣:カ 散らす:散ら:サ 待つ:待:タ 笑ふ:笑:ハ 呼ぶ:呼:バ 住む:住:マ 足る:足:ラ:たる 思ふ:思:ハ 飽く:飽:カ:あく 動く:動:カ 驚く:驚:カ 聞く:聞:カ 嘆く:嘆:カ 急ぐ:急:ガ 泳ぐ:泳:ガ 漕ぐ:漕:ガ 騒ぐ:騒:ガ 脱ぐ:脱:ガ 起こす:起こ:サ 指す:指:サ 過ごす:過ご:サ 話す:話:サ 誤つ:誤:タ:あやまつ 討つ:討:タ 勝つ:勝:タ 保つ:保:タ 放つ:放:タ 疑ふ:疑:ハ 食ふ:食:ハ:くふ 使ふ:使:ハ 養ふ:養:ハ 酔ふ:酔:ハ 転ぶ:転:バ:ころぶ 飛ぶ:飛:バ 学ぶ:学:バ 結ぶ:結:バ 組む:組:マ 好む:好:マ 富む:富:マ 望む:望:マ 踏む:踏:マ 借る:借:ラ:かる 取る:取:ラ 乗る:乗:ラ 走る:走:ラ 光る:光:ラ`,
+shimo2:`得::ア:う 明く:明:カ:あく 投ぐ:投:ガ:なぐ 失す:失:サ:うす 混ず:混:ザ:まず 捨つ:捨:タ:すつ 愛づ:愛:ダ:めづ 連ぬ:連:ナ:つらぬ 憂ふ:憂:ハ:うれふ 比ぶ:比:バ:くらぶ 集む:集:マ:あつむ 聞こゆ:聞こ:ヤ 恐る:恐:ラ:おそる 植う:植:ワ:うう 心得:心:ア:こころう:「得」の複合動詞 見ゆ:見:ヤ:みゆ 据う:据:ワ:すう 預く:預:カ:あづく 受く:受:カ:うく 避く:避:カ:さく 助く:助:カ:たすく 負く:負:カ:まく 上ぐ:上:ガ:あぐ 下ぐ:下:ガ:さぐ 捧ぐ:捧:ガ:ささぐ 告ぐ:告:ガ:つぐ 遂ぐ:遂:ガ:とぐ 褪す:褪:サ:あす 似す:似:サ:にす 任す:任:サ:まかす 痩す:痩:サ:やす 当つ:当:タ:あつ 慌つ:慌:タ:あわつ 企つ:企:タ:くはだつ 果つ:果:タ:はつ 出づ:出:ダ:いづ 撫づ:撫:ダ:なづ 詣づ:詣:ダ:まうづ 罷づ:罷:ダ:まかづ 重ぬ:重:ナ:かさぬ 兼ぬ:兼:ナ:かぬ 尋ぬ:尋:ナ:たづぬ 寝::ナ:ぬ 跳ぬ:跳:ナ:はぬ 与ふ:与:ハ:あたふ 答ふ:答:ハ:こたふ 経::ハ:ふ 迎ふ:迎:ハ:むかふ 教ふ:教:ハ:をしふ 調ぶ:調:バ:しらぶ 統ぶ:統:バ:すぶ 食ぶ:食:バ:たぶ 述ぶ:述:バ:のぶ 定む:定:マ:さだむ 攻む:攻:マ:せむ 眺む:眺:マ:ながむ 始む:始:マ:はじむ 求む:求:マ:もとむ 覚ゆ:覚:ヤ:おぼゆ 消ゆ:消:ヤ:きゆ 越ゆ:越:ヤ:こゆ 絶ゆ:絶:ヤ:たゆ 荒る:荒:ラ:ある 訪る:訪:ラ:おとづる 隠る:隠:ラ:かくる 枯る:枯:ラ:かる 流る:流:ラ:ながる 飢う:飢:ワ:うう 所得:所:ア:ところう:「得」の複合動詞`,
+kami2:`起く:起:カ:おく 凪ぐ:凪:ガ:なぐ 落つ:落:タ:おつ 閉づ:閉:ダ:とづ 生ふ:生:ハ:おふ 侘ぶ:侘:バ:わぶ 恨む:恨:マ:うらむ 報ゆ:報:ヤ:むくゆ 下る:下:ラ:おる 怖づ:怖:ダ:おづ 強ふ:強:ハ:しふ 滅ぶ:滅:バ:ほろぶ 凍む:凍:マ:しむ 悔ゆ:悔:ヤ:くゆ 懲る:懲:ラ:こる 尽く:尽:カ:つく 過ぐ:過:ガ:すぐ 朽つ:朽:タ:くつ 綴づ:綴:ダ:とづ 恥づ:恥:ダ:はづ 恋ふ:恋:ハ:こふ 帯ぶ:帯:バ:おぶ 試む:試:マ:こころむ 老ゆ:老:ヤ:おゆ 古る:古:ラ:ふる`,
+kami1:`着る::カ:きる 似る::ナ:にる 煮る::ナ:にる 干る::ハ:ひる 乾る::ハ:ひる 見る::マ:みる 射る::ヤ:いる 鋳る::ヤ:いる 居る::ワ:ゐる 率る::ワ:ゐる 試みる:試:マ:こころみる:「見る」の複合動詞 鑑みる:鑑:マ:かんがみる:「見る」の複合動詞 後見る:うしろ:マ:うしろみる:「見る」の複合動詞 惟みる:惟:マ:おもんみる:「見る」の複合動詞 顧みる:顧:マ:かへりみる:「見る」の複合動詞 率ゐる:率:ワ:ひきゐる:「率る」の複合動詞 用ゐる:用:ワ:もちゐる:「率る」の複合動詞`,
+shimo1:`蹴る::カ:ける`,
+ka:`来::カ:く 出で来:出で:カ:いでく:「来」の複合動詞 追ひ来:追ひ:カ:おひく:「来」の複合動詞 詣で来:詣で:カ:まうでく:「来」の複合動詞 持て来:持て:カ:もてく:「来」の複合動詞`,
+sa:`す::サ おはす:おは:サ 案ず:案:ザ:あんず:「混ず」以外のザ行の動詞はサ変 信ず:信:ザ:しんず:「混ず」以外のザ行の動詞はサ変 愛す:愛:サ:あいす:漢語＋すの複合動詞 心地す:心地:サ:ここちす:名詞＋すの複合動詞 重んず:重ん:ザ:おもんず:形容詞＋すの複合動詞`,
+na:`死ぬ:死:ナ:しぬ 往ぬ:往:ナ:いぬ 去ぬ:去:ナ:いぬ 思ひ死ぬ:思ひ死:ナ:おもひしぬ:「死ぬ」の複合動詞 恋ひ死ぬ:恋ひ死:ナ:こひしぬ:「死ぬ」の複合動詞`,
+ra:`あり:あ:ラ 居り:居:ラ:をり 侍り:侍:ラ:はべり いまそかり:いまそか:ラ かかり:かか:ラ::副詞「かく」＋ありの複合動詞 さり:さ:ラ::副詞「さ」＋ありの複合動詞 しかり:しか:ラ::副詞「しか」＋ありの複合動詞`};
+
+const HB=[];
+TYPES.forEach(T=>{
+ HB_SRC[T.id].split(/\s+/).filter(Boolean).forEach(spec=>{
+  const [k,pre,row,yomi,note]=spec.split(':');
+  const R=ROWS[row],idx=T.id==='ka'?[1,2,3,4]:[0,1,2,3];
+  HB.push({kind:'hb',id:'h:'+k,tid:T.id,k,yomi:yomi||'',note:note||'',z:pre+R[T.zd]+'ず',zch:idx.map(i=>pre+R[i]+'ず')});
+ });
+});
+
+/* ====== 活用表の動詞（基本形:語幹:行） 語幹が（ ）なら区別なし ====== */
+const TB_SRC={
+yodan:`思ふ:おも:ハ 書く:か:カ 仰ぐ:あふ:ガ 隠す:かく:サ 持つ:も:タ 言ふ:い:ハ 遊ぶ:あそ:バ 読む:よ:マ 狩る:か:ラ 泣く:な:カ 散らす:ちら:サ 待つ:ま:タ 笑ふ:わら:ハ 呼ぶ:よ:バ 住む:す:マ 足る:た:ラ`,
+shimo2:`上ぐ:あ:ガ 得:（う）:ア 明く:あ:カ 投ぐ:な:ガ 失す:う:サ 混ず:ま:ザ 捨つ:す:タ 愛づ:め:ダ 連ぬ:つら:ナ 憂ふ:うれ:ハ 比ぶ:くら:バ 集む:あつ:マ 聞こゆ:きこ:ヤ 恐る:おそ:ラ 植う:う:ワ 心得:こころ:ア 見ゆ:み:ヤ 据う:す:ワ`,
+kami2:`過ぐ:す:ガ 起く:お:カ 凪ぐ:な:ガ 落つ:お:タ 閉づ:と:ダ 生ふ:お:ハ 侘ぶ:わ:バ 恨む:うら:マ 報ゆ:むく:ヤ 下る:お:ラ 怖づ:お:ダ 強ふ:し:ハ 滅ぶ:ほろ:バ 凍む:し:マ 悔ゆ:く:ヤ 懲る:こ:ラ`,
+kami1:`見る:（み）:マ 着る:（き）:カ 似る:（に）:ナ 干る:（ひ）:ハ 試みる:こころ:マ 射る:（い）:ヤ 居る:（ゐ）:ワ 煮る:（に）:ナ 乾る:（ひ）:ハ 鑑みる:かんが:マ 鋳る:（い）:ヤ 率る:（ゐ）:ワ`,
+shimo1:`蹴る:（け）:カ`,
+ka:`来:（く）:カ 出で来:いで:カ`,
+sa:`す:（す）:サ おはす:おは:サ 案ず:あん:ザ`,
+na:`死ぬ:し:ナ 往ぬ:い:ナ`,
+ra:`あり:あ:ラ 侍り:はべ:ラ 居り:を:ラ いまそかり:いまそか:ラ`};
+const TB=[];
+TYPES.forEach(T=>{
+ TB_SRC[T.id].split(/\s+/).filter(Boolean).forEach(spec=>{
+  const [k,st,row]=spec.split(':');
+  TB.push({kind:'tb',id:'t:'+k,tid:T.id,k,st,row,ans:[st].concat(formsOf(T,row)).concat([row+'行'])});
+ });
+});
+
+/* ====== 暗記語 ====== */
+const ANKI_SRC={
+yodan:[
+ ['口語の「飽きる」（上一段）は、文語では？','飽く',['飽く','飽きる','飽ける','飽かる'],'口語で上一段の「飽きる」「借りる」「足りる」は、文語では<b>四段</b>の「飽く」「借る」「足る」。'],
+ ['口語の「借りる」（上一段）は、文語では？','借る',['借る','借りる','借れる','借らる'],'口語で上一段の「借りる」は、文語では<b>四段</b>の「借る」。'],
+ ['口語の「足りる」（上一段）は、文語では？','足る',['足る','足りる','足れる','足らる'],'口語で上一段の「足りる」は、文語では<b>四段</b>の「足る」。'],
+ ['口語の「言う」（ワ行・ア行）は、文語では？','言ふ',['言ふ','言う','言ゆ','言む'],'口語でワ行・ア行にまたがる「思う」「言う」は、文語では<b>ハ行四段</b>の「思ふ」「言ふ」。'],
+ ['「書ける」「読める」のような可能動詞は、文語にある？','ない',['ない','ある'],'文語には「書ける」「読める」という形の<b>可能動詞はない</b>。']],
+shimo2:[
+ ['口語の「上げる」（下一段）は、文語では？','上ぐ',['上ぐ','上げる','上がる','上ぎる'],'口語で下一段活用の語の多くは、文語では<b>下二段</b>になる。'],
+ ['ア行に活用する動詞は？（この一語だけ）','得',['得','植う','老ゆ','居る'],'ア行に活用する動詞は<b>「得」</b>だけ（ア行下二段）。複合動詞に「心得」「所得」がある。'],
+ ['語幹と語尾の区別がない下二段動詞は？','得・寝・経',['得・寝・経','着る・煮る・見る','来・す・あり','蹴る・来・す'],'<b>「得（う）」「寝（ぬ）」「経（ふ）」</b>は語幹と語尾の区別がない下二段動詞。'],
+ ['サ変以外でザ行に活用する動詞は？（この一語だけ）','混ず',['混ず','案ず','信ず','感ず'],'<b>「混ず（交ず）」</b>はザ行下二段。それ以外のザ行の動詞（案ず・信ずなど）はサ変。'],
+ ['ワ行下二段活用の動詞は？（三語だけ）','植う・飢う・据う',['植う・飢う・据う','老ゆ・悔ゆ・報ゆ','居る・率る・用ゐる','得・寝・経'],'ワ行下二段は<b>「植う」「飢う」「据う」</b>の三語だけ。'],
+ ['「経」（ハ行下二段）の終止形の読みは？','ふ',['ふ','へ','へる','ふる'],'「経」は<b>「ふ」</b>と読む（へ・へ・ふ・ふる・ふれ・へよ）。']],
+kami2:[
+ ['口語の「過ぎる」（上一段）は、文語では？','過ぐ',['過ぐ','過ぎる','過げる','過がる'],'口語で上一段活用の語の多くは、文語では<b>上二段</b>になる。'],
+ ['ヤ行上二段活用の動詞は？（三語だけ）','老ゆ・悔ゆ・報ゆ',['老ゆ・悔ゆ・報ゆ','植う・飢う・据う','射る・鋳る','見ゆ・消ゆ・覚ゆ'],'<b>「老ゆ」「悔ゆ」「報ゆ」</b>はヤ行上二段。この三語だけ。'],
+ ['「老い―ず」と活用する「老ゆ」は何行？','ヤ行',['ヤ行','ア行','ワ行','ハ行'],'「老い」の「い」はア行ではなく<b>ヤ行</b>の「い」。'],
+ ['口語で五段活用の「恨む」は、文語では？','上二段活用',['上二段活用','四段活用','下二段活用','上一段活用'],'口語で五段の「恨む」は、文語では<b>上二段</b>活用（恨み―ず）。'],
+ ['口語の「怖じる」「閉じる」（ザ行上一段）は、文語では？','ダ行上二段（怖づ・閉づ）',['ダ行上二段（怖づ・閉づ）','ザ行上二段（怖ず・閉ず）','ザ行上一段（怖じる・閉じる）','ダ行下二段（怖づ・閉づ）'],'口語でザ行上一段の語は、文語では<b>ダ行上二段</b>になる。']],
+kami1:[
+ ['上一段活用の動詞の覚え方は？','ひ・い・き・に・み・ゐる',['ひ・い・き・に・み・ゐる','あり・をり・はべり・いまそかり','き・く・こ','し・す・せ'],'上一段は語数が少ないので<b>「ひ・い・き・に・み・ゐる」</b>と覚える（干る／射る・鋳る／着る／煮る・似る／見る／居る・率る）。'],
+ ['「ひいきにみゐる」の「い」にあたる動詞は？','射る・鋳る',['射る・鋳る','居る・率る','老ゆ・悔ゆ','着る・煮る'],'「い」は<b>射る・鋳る</b>（ヤ行上一段）。'],
+ ['「ひいきにみゐる」の「ゐ」にあたる動詞は？','居る・率る',['居る・率る','射る・鋳る','居り・侍り','植う・据う'],'「ゐ」は<b>居る・率る</b>（ワ行上一段）。'],
+ ['「居る（ゐる）」は何活用？','ワ行上一段',['ワ行上一段','ラ行変格','ヤ行上一段','ア行上一段'],'「居る」は<b>ワ行上一段</b>。「居り（をり）」はラ変なので区別する。'],
+ ['「見る」はマ行上一段。では「見ゆ」は？','ヤ行下二段',['ヤ行下二段','マ行上一段','ヤ行上二段','マ行下二段'],'「見ゆ」は<b>ヤ行下二段</b>（見え―ず）。'],
+ ['文語で上一段活用の語は、口語では何活用？','上一段活用',['上一段活用','五段活用','下一段活用','カ行変格活用'],'文語で上一段の語は、<b>口語でも上一段</b>活用。'],
+ ['上一段活用の語幹と語尾は？','区別がない',['区別がない','区別がある'],'複合動詞を除いて<b>語幹と語尾の区別がない</b>（活用表ではカッコに入れて示す）。']],
+shimo1:[
+ ['下一段活用の動詞は？（一語だけ）','蹴る',['蹴る','見る','得','寝'],'下一段は<b>「蹴る」</b>一語だけなので暗記する。'],
+ ['「蹴る」は何行？','カ行',['カ行','ラ行','ア行','ガ行'],'「蹴る」は<b>カ行</b>下一段（け・け・ける・ける・けれ・けよ）。'],
+ ['口語でラ行五段の「蹴る」は、文語では？','カ行下一段',['カ行下一段','ラ行四段','カ行下二段','ラ行変格'],'文語では<b>カ行下一段</b>。口語の「蹴散らす」「蹴飛ばす」に下一段の名残がある。']],
+ka:[
+ ['カ行変格活用の動詞は？（一語だけ）','来',['来','来たる','蹴る','往ぬ'],'カ変は<b>「来」</b>一語だけ。ただし複合動詞を作る（出で来・詣で来など）。'],
+ ['「来たる」は何活用？','ラ行四段',['ラ行四段','カ行変格','ラ行変格','カ行下二段'],'「来たる」は<b>ラ行四段</b>。中古以降、主に漢文訓読体で用いられる。'],
+ ['カ変が活用する三音は？','き・く・こ',['き・く・こ','し・す・せ','な・に・ぬ・ね','ら・り・る・れ'],'カ行の<b>キ・ク・コの三音</b>に活用する。'],
+ ['カ変の命令形は？','こ（こよ）',['こ（こよ）','き（きよ）','くれ','け'],'命令形は<b>「こ」</b>。「よ」を伴う「こよ」もある。'],
+ ['カ変の複合動詞は？','出で来・詣で来',['出で来・詣で来','心得・所得','愛す・心地す','思ひ死ぬ・恋ひ死ぬ'],'<b>出で来・追ひ来・詣で来・持て来</b>などはカ変の複合動詞。']],
+sa:[
+ ['サ行変格活用の動詞は？（二語だけ）','す・おはす',['す・おはす','す・なす','死ぬ・往ぬ','あり・居り'],'サ変は<b>「す」「おはす」</b>の二語だけ。「す」は複合動詞を作る。'],
+ ['「なす」は何活用？','サ行四段',['サ行四段','サ行変格','サ行下二段','ナ行変格'],'「なす」は<b>サ行四段</b>（なさ―ず）。「す」だけがサ変。'],
+ ['「案ず」「信ず」など、「混ず」以外のザ行の動詞は？','サ変',['サ変','ザ行下二段','ザ行四段','ザ行上二段'],'「混ず」以外のザ行の動詞は<b>サ変</b>（複合動詞）。'],
+ ['「愛す」「心地す」「重んず」は何活用？','サ変',['サ変','四段','下二段','上二段'],'漢語＋す・名詞＋す・形容詞＋すの複合動詞は<b>サ変</b>。'],
+ ['サ変が活用する三音は？','し・す・せ',['し・す・せ','き・く・こ','さ・し・す・せ','な・に・ぬ・ね'],'サ行の<b>シ・ス・セの三音</b>に活用する。']],
+na:[
+ ['ナ行変格活用の動詞は？（二語だけ）','死ぬ・往ぬ（去ぬ）',['死ぬ・往ぬ（去ぬ）','死ぬ・寝ぬ','死す・往ぬ','す・おはす'],'ナ変は<b>「死ぬ」「往ぬ（去ぬ）」</b>の二語だけ。'],
+ ['「死す」は何活用？','サ行変格',['サ行変格','ナ行変格','サ行四段','ナ行下二段'],'「死す」は<b>サ変</b>。「死ぬ」（ナ変）と区別する。'],
+ ['「寝ぬ（いぬ）」は何活用？','ナ行下二段',['ナ行下二段','ナ行変格','ナ行四段','ナ行上二段'],'「寝ぬ」は<b>ナ行下二段</b>。「往ぬ」（ナ変）と区別する。'],
+ ['ナ行に活用する四段活用動詞はある？','ない',['ない','ある'],'ナ行の四段動詞は<b>ない</b>。ナ・ニ・ヌ・ネの四音に活用するのはナ変だけ。']],
+ra:[
+ ['ラ行変格活用の動詞は？（四語だけ）','あり・居り・侍り・いまそかり',['あり・居り・侍り・いまそかり','あり・居る・侍り・いまそかり','あり・帰る・侍り・をる','あり・居り・蹴る・来'],'ラ変は<b>「あり」「居り」「侍り」「いまそかり（いますかり）」</b>の四語だけ。'],
+ ['「居り（をり）」は何活用？','ラ行変格',['ラ行変格','ワ行上一段','ラ行四段','ラ行上一段'],'「居り」は<b>ラ変</b>。「居る（ゐる）」はワ行上一段。'],
+ ['ラ変の終止形の語尾は？','り（i段）',['り（i段）','る（u段）','ら（a段）','れ（e段）'],'ラ変は基本形（終止形）が<b>i段の「り」</b>で言い切る。'],
+ ['「帰る」などのラ行四段とラ変の違いは？','基本形（終止形）だけ',['基本形（終止形）だけ','連用形だけ','命令形だけ','未然形だけ'],'ラ行四段とラ変は<b>終止形だけ</b>が異なる（ラ変は「り」、四段は「る」）。'],
+ ['「かかり」「さり」「しかり」は何活用？','ラ変',['ラ変','ラ行四段','カ変','サ変'],'副詞「かく」「さ」「しか」＋「あり」の複合動詞で<b>ラ変</b>。']]};
+const ANKI=[];
+TYPES.forEach(T=>ANKI_SRC[T.id].forEach(([q,a,ch,note],i)=>ANKI.push({kind:'anki',id:`a:${T.id}:${i+1}`,tid:T.id,q,a,ch,note})));
+
+/* ====== 基本形（古文例文） ====== */
+function K(tid,list){return list.map((o,i)=>Object.assign({kind:o.yomi?'yomi':'kh',id:`${o.yomi?'y':'k'}:${tid}:${i+1}`,tid},o));}
+const CH_OMOFU=['思ふ','思う','思ひる','思へる'];
+const CH_AGU=['上ぐ','上げる','上がる','上ぎる'];
+const CH_SUGU=['過ぐ','過ぎる','過ごす','過がる'];
+const CH_MIRU=['見る','見ゆ','見す','見つ'];
+const CH_KERU=['蹴る','蹴く','蹴す','蹴ゆ'];
+const CH_KU=['来（く）','来る（くる）','来たる（きたる）','来（こ）'];
+const CH_SU=['す','する','せる','さす'];
+const CH_SHINU=['死ぬ','死す','死なる','死にる'];
+const CH_ARI=['あり','ある','あらる','あす'];
+const KH=[].concat(
+K('yodan',[
+ {s:'忘らるる身をば<u>思は</u>ず',src:'拾遺集',tr:'（あなたに）忘れられる私自身のことは（なんとも）思わない。',u:'思は',a:'思ふ',ch:CH_OMOFU,form:'未然形',type:'ハ行四段活用'},
+ {s:'げにと<u>思ひ</u>て、人々忘れず。',src:'土佐日記',tr:'なるほどと思って、人々は（この歌を）忘れない。',u:'思ひ',a:'思ふ',ch:CH_OMOFU,form:'連用形',type:'ハ行四段活用'},
+ {s:'男はこの女をこそ得めと<u>思ふ</u>。',src:'伊勢物語',tr:'男はこの女をぜひ妻にしようと思う。',u:'思ふ',a:'思ふ',ch:CH_OMOFU,form:'終止形',type:'ハ行四段活用'},
+ {s:'京に<u>思ふ</u>人なきにしもあらず。',src:'伊勢物語',tr:'都に恋しく思う人がいないわけでもない。',u:'思ふ',a:'思ふ',ch:CH_OMOFU,form:'連体形',type:'ハ行四段活用'},
+ {s:'はかなく<u>思へ</u>ども、<ruby>仏<rt>ほとけ</rt></ruby>のはからはせ給ふやうあらむ。',src:'宇治拾遺物語',tr:'頼りなく思うけれども、仏がお取り計らいになるわけがあるのだろう。',u:'思へ',a:'思ふ',ch:CH_OMOFU,form:'已然形',type:'ハ行四段活用'},
+ {s:'この<ruby>一矢<rt>ひとや</rt></ruby>に定むべしと<u>思へ</u>。',src:'徒然草',tr:'この一矢で決めようと思え。',u:'思へ',a:'思ふ',ch:CH_OMOFU,form:'命令形',type:'ハ行四段活用'},
+ {s:'<ruby>資財<rt>しざい</rt></ruby>を取り出づるに<u>及ば</u>ず。',src:'方丈記',tr:'家財を取り出すことはできない。',u:'及ば',a:'及ぶ',ch:['及ぶ','及ばる','及びる','及べる'],form:'未然形',type:'バ行四段活用'},
+ {s:'道長は<ruby>大極殿<rt>だいごくでん</rt></ruby>へ<u>行け</u>。',src:'大鏡',tr:'道長は大極殿へ行け。',u:'行け',a:'行く',ch:['行く','行ける','行けり','行かる'],form:'命令形',type:'カ行四段活用'},
+ {s:'<ruby>今宵<rt>こよひ</rt></ruby><u>逢は</u>む。',src:'伊勢物語',tr:'今夜逢いましょう。',u:'逢は',a:'逢ふ',ch:['逢ふ','逢う','逢はる','逢へる'],form:'未然形',type:'ハ行四段活用'},
+ {s:'<u>なす</u>ことなくして、身は老いぬ。',src:'徒然草',tr:'成し遂げることもなくて、身は老いてしまう。',u:'なす',a:'なす',ch:['なす','なさる','なしる','なせる'],form:'連体形',type:'サ行四段活用'}]),
+K('shimo2',[
+ {s:'<ruby>簾<rt>すだれ</rt></ruby>は<u>上げ</u>ず、<ruby>下簾<rt>したすだれ</rt></ruby>も<ruby>薄色<rt>うすいろ</rt></ruby>の、<ruby>裾<rt>すそ</rt></ruby>少し濃き、',src:'枕草子',tr:'（牛車の）簾を上げず、内側に垂らす布も薄い紫色で、裾のほうが少し濃いのを（垂らし）、',u:'上げ',a:'上ぐ',ch:CH_AGU,form:'未然形',type:'ガ行下二段活用'},
+ {s:'大きなる声を<u>上げ</u>て泣き叫ぶ。',src:'宇治拾遺物語',tr:'大きな声を上げて泣き叫ぶ。',u:'上げ',a:'上ぐ',ch:CH_AGU,form:'連用形',type:'ガ行下二段活用'},
+ {s:'吹く風<ruby>砂<rt>いさご</rt></ruby>を<u>上ぐ</u>。',src:'平家物語',tr:'吹く風が砂を吹き上げる。',u:'上ぐ',a:'上ぐ',ch:CH_AGU,form:'終止形',type:'ガ行下二段活用'},
+ {s:'いま一陣旗を<u>上ぐる</u>戦場にして、',src:'平家物語',tr:'もう一合戦して軍旗を掲げようとする戦場で、',u:'上ぐる',a:'上ぐ',ch:CH_AGU,form:'連体形',type:'ガ行下二段活用'},
+ {s:'<ruby>烽火<rt>ほうくわ</rt></ruby>を<u>上ぐれ</u>ども、例の<ruby>后<rt>きさき</rt></ruby>の火にならつて、兵も参らず。',src:'平家物語',tr:'のろしを上げるけれども、いつもの后の（楽しみのために上げる）火に慣れていて、兵も参上しない。',u:'上ぐれ',a:'上ぐ',ch:CH_AGU,form:'已然形',type:'ガ行下二段活用'},
+ {s:'いと暗し。<u>上げよ</u>。',src:'落窪物語',tr:'とても暗い。（格子を）上げよ。',u:'上げよ',a:'上ぐ',ch:CH_AGU,form:'命令形',type:'ガ行下二段活用'},
+ {s:'日ごろ<u>へ</u>て、宮に帰り給うけり。',src:'伊勢物語',tr:'何日かたって、（親王は）御殿にお帰りになった。',u:'へ',a:'経（ふ）',ch:['経（ふ）','経る（へる）','経つ（へつ）','経す（へす）'],form:'連用形',type:'ハ行下二段活用'},
+ {s:'道を知る者は、<u>植うる</u>ことを努む。',src:'徒然草',tr:'道理を心得る者は、（植物を）植えることに努める。',u:'植うる',a:'植う',ch:['植う','植える','植うる','植ゑる'],form:'連体形',type:'ワ行下二段活用'},
+ {s:'道を知る者は、植うることを<u>努む</u>。',src:'徒然草',tr:'道理を心得る者は、（植物を）植えることに努める。',u:'努む',a:'努む',ch:['努む','努める','努むる','努まる'],form:'終止形',type:'マ行下二段活用'}]),
+K('kami2',[
+ {s:'人間の大事、この三つには<u>過ぎ</u>ず。',src:'徒然草',tr:'人間にとっての重要事は、この（衣食住の）三点に過ぎない。',u:'過ぎ',a:'過ぐ',ch:CH_SUGU,form:'未然形',type:'ガ行上二段活用'},
+ {s:'春<u>過ぎ</u>て夏来たるらし',src:'万葉集',tr:'春が過ぎて夏がやって来るらしい。',u:'過ぎ',a:'過ぐ',ch:CH_SUGU,form:'連用形',type:'ガ行上二段活用'},
+ {s:'<ruby>清見<rt>きよみ</rt></ruby>が関を<u>過ぐ</u>。',src:'十六夜日記',tr:'清見が関を通り過ぎる。',u:'過ぐ',a:'過ぐ',ch:CH_SUGU,form:'終止形',type:'ガ行上二段活用'},
+ {s:'知らぬ人と同じやうにて<u>過ぐる</u>人あり。',src:'徒然草',tr:'知らない人と同じように聞き過ごす人もある。',u:'過ぐる',a:'過ぐ',ch:CH_SUGU,form:'連体形',type:'ガ行上二段活用'},
+ {s:'わが<ruby>膝<rt>ひざ</rt></ruby>のもとを<u>過ぐれ</u>ど、我を飲まむとさらにせず。',src:'宇治拾遺物語',tr:'（大蛇が）私の膝のすぐそばを通り過ぎるけれども、私を飲みこもうとは全くしない。',u:'過ぐれ',a:'過ぐ',ch:CH_SUGU,form:'已然形',type:'ガ行上二段活用'},
+ {s:'ゆかしからぬことぞ。早く<u>過ぎよ</u>。',src:'枕草子',tr:'興味のないことだよ。早く行き過ぎろ。',u:'過ぎよ',a:'過ぐ',ch:CH_SUGU,form:'命令形',type:'ガ行上二段活用'},
+ {s:'一門の運命はや<u>尽き</u><ruby>候<rt>さうら</rt></ruby>ひぬ。',src:'平家物語',tr:'一門の運命はもう尽きてしまいました。',u:'尽き',a:'尽く',ch:['尽く','尽きる','尽かす','尽くる'],form:'連用形',type:'カ行上二段活用'},
+ {s:'このをば、いといたう<u>老い</u>て、',src:'大和物語',tr:'この伯母は、たいそうひどく年老いて、',u:'老い',a:'老ゆ',ch:['老ゆ','老いる','老ふ','老う'],form:'連用形',type:'ヤ行上二段活用'},
+ {s:'心ある者は、<u>恥ぢ</u>ずになむ来ける。',src:'土佐日記',tr:'真心のある者は、人目を恥じずにやってきた。',u:'恥ぢ',a:'恥づ',ch:['恥づ','恥ず','恥じる','恥ぢる'],form:'未然形',type:'ダ行上二段活用'},
+ {s:'<u>忍ぶれ</u>どなほものあはれなり。',src:'源氏物語',tr:'耐え忍ぶけれどやはりもの悲しい。',u:'忍ぶれ',a:'忍ぶ',ch:['忍ぶ','忍ぶる','忍べる','忍びる'],form:'已然形',type:'バ行上二段活用'}]),
+K('kami1',[
+ {s:'山までは<u>見</u>ず。',src:'徒然草',tr:'山までは見ない。',u:'見',a:'見る',ch:CH_MIRU,form:'未然形',type:'マ行上一段活用'},
+ {s:'家の焼くるを<u>見</u>て、うちうなづきて、時々笑ひけり。',src:'宇治拾遺物語',tr:'家が焼けるのを見て、しきりにうなずいて、時々笑った。',u:'見',a:'見る',ch:CH_MIRU,form:'連用形',type:'マ行上一段活用'},
+ {s:'水鳥の思ふことなげに遊び合へるを<u>見る</u>。',src:'紫式部日記',tr:'水鳥がなんのもの思いもない様子で遊び合っているのを見る。',u:'見る',a:'見る',ch:CH_MIRU,form:'終止形',type:'マ行上一段活用'},
+ {s:'<ruby>妻戸<rt>つまど</rt></ruby>をいま少し押し開けて、月<u>見る</u>けしきなり。',src:'徒然草',tr:'妻戸をもう少し押し開けて、月を見る様子である。',u:'見る',a:'見る',ch:CH_MIRU,form:'連体形',type:'マ行上一段活用'},
+ {s:'<ruby>不便<rt>ふびん</rt></ruby>なりと<u>見れ</u>ど、いかがすべからむ。',src:'大鏡',tr:'不都合だと見るが、どうしたらよかろうか、いや、どうしようもない。',u:'見れ',a:'見る',ch:CH_MIRU,form:'已然形',type:'マ行上一段活用'},
+ {s:'この鏡を、こなたに映れるかげを<u>見よ</u>。',src:'更級日記',tr:'この鏡を、こちらのほうに映っている姿を見なさい。',u:'見よ',a:'見る',ch:CH_MIRU,form:'命令形',type:'マ行上一段活用'},
+ {s:'ただ水の泡にぞ<u>似</u>たりける。',src:'方丈記',tr:'（人の世の生滅は）全く水の泡に似ているよ。',u:'似',a:'似る',ch:['似る','似す','似ゆ','似ぬ'],form:'連用形',type:'ナ行上一段活用'},
+ {s:'かれは何ぞと<u>見よ</u>。',src:'枕草子',tr:'あれが何だか見て来い。',u:'見よ',a:'見る',ch:CH_MIRU,form:'命令形',type:'マ行上一段活用'},
+ {s:'ある人、弓<u>射る</u>ことを習ふに、',src:'徒然草',tr:'ある人が、弓を射ることを習うときに、',u:'射る',a:'射る',ch:['射る','射す','射ゆ','射つ'],form:'連体形',type:'ヤ行上一段活用'},
+ {s:'それをば<u>用ゐ</u>侍るべからず。',src:'無名抄',tr:'それを採用するのはよくありません。',u:'用ゐ',a:'用ゐる',ch:['用ゐる','用ゆ','用ふ','用ゐす'],form:'連用形',type:'ワ行上一段活用'}]),
+K('shimo1',[
+ {s:'<ruby>皮韈<rt>かはしたうづ</rt></ruby>を履きて、三足<u><ruby>蹴<rt>け</rt></ruby></u>むと思ふなり。',src:'古今著聞集',tr:'皮靴下を履いて、三回（鞠を）蹴ろうと思うのだ。',u:'蹴',a:'蹴る',ch:CH_KERU,form:'未然形',type:'カ行下一段活用'},
+ {s:'<ruby>鞠<rt>まり</rt></ruby>を<u><ruby>蹴<rt>け</rt></ruby></u>てその音を聞かせぬこと、不思議のことなり。',src:'古今著聞集',tr:'鞠を蹴ってその音を聞かせないのは、不思議なことだ。',u:'蹴',a:'蹴る',ch:CH_KERU,form:'連用形',type:'カ行下一段活用'},
+ {s:'さと寄りて<ruby>一足<rt>ひとあし</rt></ruby>づつ<u>蹴る</u>。',src:'落窪物語',tr:'さっと寄って一足ずつ蹴る。',u:'蹴る',a:'蹴る',ch:CH_KERU,form:'終止形',type:'カ行下一段活用'},
+ {s:'二丈ばかり<u>蹴る</u>人もありしなり。',src:'遊庭秘抄',tr:'六メートルくらい蹴る人もいたのである。',u:'蹴る',a:'蹴る',ch:CH_KERU,form:'連体形',type:'カ行下一段活用'},
+ {s:'<ruby>円子川<rt>まりこがは</rt></ruby><u>蹴れ</u>ばぞ波は上がりける。',src:'源平盛衰記',tr:'円子川の水を蹴ると、波が上がった。',u:'蹴れ',a:'蹴る',ch:CH_KERU,form:'已然形',type:'カ行下一段活用'},
+ {s:'<ruby>尻<rt>しり</rt></ruby><u>蹴よ</u>。',src:'今昔物語集',tr:'尻を蹴れ。',u:'蹴よ',a:'蹴る',ch:CH_KERU,form:'命令形',type:'カ行下一段活用'},
+ {s:'尻をほうと<u><ruby>蹴<rt>け</rt></ruby></u>たれば、失せぬるなり。',src:'宇治拾遺物語',tr:'尻をぽんと蹴ったところ、死んでしまったのである。',u:'蹴',a:'蹴る',ch:CH_KERU,form:'連用形',type:'カ行下一段活用'}]),
+K('ka',[
+ {s:'<ruby>大和人<rt>やまとびと</rt></ruby>、「<u><ruby>来<rt>こ</rt></ruby></u>む。」と言へり。',src:'伊勢物語',tr:'大和の国の男は、「行くつもりだ。」と言った。',u:'来',a:'来（く）',ch:CH_KU,form:'未然形',type:'カ行変格活用'},
+ {s:'この男<u><ruby>来<rt>き</rt></ruby></u>たりけり。',src:'伊勢物語',tr:'この男が来た。',u:'来',a:'来（く）',ch:CH_KU,form:'連用形',type:'カ行変格活用'},
+ {s:'人々、絶えずとぶらひに<u><ruby>来<rt>く</rt></ruby></u>。',src:'土佐日記',tr:'人々が、絶えず訪問に来る。',u:'来',a:'来（く）',ch:CH_KU,form:'終止形',type:'カ行変格活用'},
+ {s:'しのびて<u><ruby>来<rt>く</rt></ruby>る</u>人見知りてほゆる犬。',src:'枕草子',tr:'（にくらしいもの、）人目を避けて通って来る人を見知っているのにほえる犬。',u:'来る',a:'来（く）',ch:CH_KU,form:'連体形',type:'カ行変格活用'},
+ {s:'春<u><ruby>来<rt>く</rt></ruby>れ</u>ば<ruby>雁<rt>かり</rt></ruby>帰るなり',src:'古今集',tr:'春が来るので雁が帰って行くようだ。',u:'来れ',a:'来（く）',ch:CH_KU,form:'已然形',type:'カ行変格活用'},
+ {s:'いづら、猫は。こちゐて<u><ruby>来<rt>こ</rt></ruby></u>。',src:'更級日記',tr:'どこだ、猫は。こちらへ連れて来い。',u:'来',a:'来（く）',ch:CH_KU,form:'命令形',type:'カ行変格活用'},
+ {s:'馬を取りて<u><ruby>来<rt>こ</rt></ruby>よ</u>。',src:'今昔物語集',tr:'馬を取って来い。',u:'来よ',a:'来（く）',ch:CH_KU,form:'命令形',type:'カ行変格活用'},
+ {yomi:1,s:'のちに迎へに<u>来</u>む。',src:'更級日記',tr:'あとで迎えに来よう。',u:'来',a:'こ',ch:['こ','き','く','け'],form:'未然形',type:'カ行変格活用'},
+ {yomi:1,s:'我もこの戸より出でて<u>来</u>。',src:'源氏物語',tr:'自分もこの戸口から出て来る。',u:'来',a:'く',ch:['こ','き','く','け'],form:'終止形',type:'カ行変格活用'},
+ {yomi:1,s:'馬を<ruby>馳<rt>は</rt></ruby>せて<u>来る</u>者あり。',src:'宇治拾遺物語',tr:'馬を走らせて来る人がいる。',u:'来る',a:'くる',ch:['くる','きたる','こる','きる'],form:'連体形',type:'カ行変格活用'},
+ {yomi:1,s:'<ruby>東南<rt>たつみ</rt></ruby>より火出で<u>来</u>て、<ruby>西北<rt>いぬゐ</rt></ruby>に至る。',src:'方丈記',tr:'東南から火事が起こって、西北の方角に広がった。',u:'来',a:'き',ch:['こ','き','く','け'],form:'連用形',type:'カ行変格活用'},
+ {yomi:1,s:'<ruby>汝<rt>なんぢ</rt></ruby>ら、よく持て<u>来</u>ずなりぬ。',src:'竹取物語',tr:'おまえたち、よくぞ持って来ないでくれた。',u:'来',a:'こ',ch:['こ','き','く','け'],form:'未然形',type:'カ行変格活用'},
+ {yomi:1,s:'家に、「<ruby>造麻呂<rt>みやつこまろ</rt></ruby>、まうで<u>来</u>。」と言ふに、',src:'竹取物語',tr:'（天人が）家に向かって、「造麻呂、出て来い。」と言うと、',u:'来',a:'こ',ch:['こ','き','く','け'],form:'命令形',type:'カ行変格活用'}]),
+K('sa',[
+ {s:'いみじからむ心地も<u>せ</u>ず。',src:'竹取物語',tr:'うれしいような気持ちもしない。',u:'せ',a:'す',ch:CH_SU,form:'未然形',type:'サ行変格活用'},
+ {s:'<ruby>遺恨<rt>ゐこん</rt></ruby>のわざをも<u>し</u>たりけるかな。',src:'大鏡',tr:'気の毒なことをしてしまったなあ。',u:'し',a:'す',ch:CH_SU,form:'連用形',type:'サ行変格活用'},
+ {s:'<ruby>戌<rt>いぬ</rt></ruby>の時に、門出<u>す</u>。',src:'土佐日記',tr:'午後八時ごろに、出発する。',u:'す',a:'す',ch:CH_SU,form:'終止形',type:'サ行変格活用'},
+ {s:'もとより友と<u>する</u>人、ひとりふたりして行きけり。',src:'伊勢物語',tr:'以前から友とする人、一人二人とともに行った。',u:'する',a:'す',ch:CH_SU,form:'連体形',type:'サ行変格活用'},
+ {s:'弓矢を取り立てむと<u>すれ</u>ども、手に力もなくなりて、',src:'竹取物語',tr:'弓矢を持って構えようとするけれども、手に力もなくなって、',u:'すれ',a:'す',ch:CH_SU,form:'已然形',type:'サ行変格活用'},
+ {s:'<ruby>教経<rt>のりつね</rt></ruby>に組んで生け捕りに<u>せよ</u>。',src:'平家物語',tr:'教経と組み討って生け捕りにしろ。',u:'せよ',a:'す',ch:CH_SU,form:'命令形',type:'サ行変格活用'},
+ {s:'いま五日ありて<u>おはせよ</u>。',src:'宇治拾遺物語',tr:'もう五日たっておいでなさい。',u:'おはせよ',a:'おはす',ch:['おはす','おはする','おはせる','おはさす'],form:'命令形',type:'サ行変格活用'},
+ {s:'<u>死し</u>て伏せりけり。',src:'宇治拾遺物語',tr:'死んで倒れていた。',u:'死し',a:'死す',ch:['死す','死ぬ','死する','死しる'],form:'連用形',type:'サ行変格活用'},
+ {s:'のど乾き、死なむと<u>す</u>。',src:'宇治拾遺物語',tr:'のどが乾き、死にそうだ。',u:'す',a:'す',ch:CH_SU,form:'終止形',type:'サ行変格活用'}]),
+K('na',[
+ {s:'一杯食へども<u>死な</u>ず、',src:'沙石集',tr:'一杯食べるが死なず、',u:'死な',a:'死ぬ',ch:CH_SHINU,form:'未然形',type:'ナ行変格活用'},
+ {s:'<u>死に</u>てののちまでも<ruby>屍<rt>かばね</rt></ruby>の上の恥を見えじ。',src:'義経記',tr:'死んだあとまでも屍の上の恥を見せまい。',u:'死に',a:'死ぬ',ch:CH_SHINU,form:'連用形',type:'ナ行変格活用'},
+ {s:'炎にまぐれてたちまちに<u>死ぬ</u>。',src:'方丈記',tr:'炎に目がくらんで倒れて瞬く間に死ぬ。',u:'死ぬ',a:'死ぬ',ch:CH_SHINU,form:'終止形',type:'ナ行変格活用'},
+ {s:'これは、人の食ひつれば<u>死ぬる</u>ものぞ。',src:'沙石集',tr:'これは、人が食べると必ず死ぬものだよ。',u:'死ぬる',a:'死ぬ',ch:CH_SHINU,form:'連体形',type:'ナ行変格活用'},
+ {s:'つひにはその毒のゆゑに<u>死ぬれ</u>ども、',src:'宇治拾遺物語',tr:'とうとうその毒のために死ぬけれども、',u:'死ぬれ',a:'死ぬ',ch:CH_SHINU,form:'已然形',type:'ナ行変格活用'},
+ {s:'<ruby>吾<rt>あれ</rt></ruby>を<u>死ね</u>とや思ほすらむ。',src:'古事記',tr:'私など死ねとお思いなのだろうか。',u:'死ね',a:'死ぬ',ch:CH_SHINU,form:'命令形',type:'ナ行変格活用'},
+ {s:'笛の音など聞こえたるは、過ぎて<u>往ぬる</u>もくちをし。',src:'枕草子',tr:'笛の音などが聞こえている牛車は、通り過ぎて去って行くのも残念だ。',u:'往ぬる',a:'往ぬ',ch:['往ぬ','往ぬる','往く','寝ぬ'],form:'連体形',type:'ナ行変格活用'},
+ {s:'のど乾き、<u>死な</u>むとす。',src:'宇治拾遺物語',tr:'のどが乾き、死にそうだ。',u:'死な',a:'死ぬ',ch:CH_SHINU,form:'未然形',type:'ナ行変格活用'}]),
+K('ra',[
+ {s:'おのが身はこの国の人にも<u>あら</u>ず。',src:'竹取物語',tr:'私の身はこの人間世界の人でもありません。',u:'あら',a:'あり',ch:CH_ARI,form:'未然形',type:'ラ行変格活用'},
+ {s:'猫またといふもの<u>あり</u>て、人を食らふなる。',src:'徒然草',tr:'猫またというものがいて、人を食うそうだよ。',u:'あり',a:'あり',ch:CH_ARI,form:'連用形',type:'ラ行変格活用'},
+ {s:'いと大きなる河<u>あり</u>。',src:'伊勢物語',tr:'たいそう大きな川がある。',u:'あり',a:'あり',ch:CH_ARI,form:'終止形',type:'ラ行変格活用'},
+ {s:'<ruby>清水<rt>しみづ</rt></ruby>の<u>ある</u>所に伏しにけり。',src:'伊勢物語',tr:'清水がある所にうつぶしてしまった。',u:'ある',a:'あり',ch:CH_ARI,form:'連体形',type:'ラ行変格活用'},
+ {s:'<ruby>銭<rt>ぜに</rt></ruby><u>あれ</u>ども用ゐざらむは、全く貧者と同じ。',src:'徒然草',tr:'お金があるのに使わないようなのは、全く貧者と同じだ。',u:'あれ',a:'あり',ch:CH_ARI,form:'已然形',type:'ラ行変格活用'},
+ {s:'なほここに<u>あれ</u>。',src:'源氏物語',tr:'やはりここにいなさい。',u:'あれ',a:'あり',ch:CH_ARI,form:'命令形',type:'ラ行変格活用'},
+ {s:'<ruby>頭<rt>かしら</rt></ruby>かいけづりなどして<u>居り</u>。',src:'大和物語',tr:'髪を櫛でとかしなどしている。',u:'居り',a:'居り（をり）',ch:['居り（をり）','居る（ゐる）','居る（をる）','居す（をす）'],form:'終止形',type:'ラ行変格活用'},
+ {s:'いと興<u>ある</u>ことなり。',src:'大鏡',tr:'たいへんおもしろいことだ。',u:'ある',a:'あり',ch:CH_ARI,form:'連体形',type:'ラ行変格活用'}]));
+
+/* 四段サンプルからのID互換（既存の苦手記録を引き継ぐ） */
+const ALL_ITEMS=[].concat(ANKI,HB,TB,KH);
+const ITEM_BY_ID={};ALL_ITEMS.forEach(x=>ITEM_BY_ID[x.id]=x);
+
+/* ====== 保存 ====== */
+const KEY='kobun-training-v1';
+let S={cleared:{},weak:{},streak:0,best:0};
+function load(){try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);S=Object.assign(S,o);}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ====== ユーティリティ ====== */
+const app=document.getElementById('app'),fx=document.getElementById('fx');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pickN(pool,n){const w=shuffle(pool.filter(x=>S.weak[x.id]!=null)),r=shuffle(pool.filter(x=>S.weak[x.id]==null));return w.concat(r).slice(0,n);}
+function uniq(a){return a.filter((x,i)=>x&&a.indexOf(x)===i);}
+function modeDone(tid,m){return !!(S.cleared[tid]&&S.cleared[tid][m]);}
+function passed(tid){return MODES.every(m=>modeDone(tid,m.id));}
+function typeOpen(i){return i===0||passed(TYPES[i-1].id);}
+function modeOpen(tid,mi){return mi===0||modeDone(tid,MODES[mi-1].id);}
+function weakIds(){return Object.keys(S.weak).filter(id=>ITEM_BY_ID[id]);}
+function openedMax(){let m=0;TYPES.forEach((T,i)=>{if(typeOpen(i))m=i;});return m;}
+function T_(tid){return TYPES[TIDX[tid]];}
+
+/* ====== 演出 ====== */
+function maru(){fx.innerHTML='<div class="maru"></div>';}
+function fude(t){fx.innerHTML='<div class="fude">'+t+'</div>';}
+const MILESTONES={10:'見事',30:'天晴',50:'神業',100:'達人'};
+
+/* ====== 画面：ホーム ====== */
+let screen='home',curType=0,Q=null;
+function renderHome(){
+ screen='home';
+ let h='<h1>古文トレーニング</h1><div class="tagline">動詞の活用 九種</div>';
+ const wc=weakIds().length;
+ h+=`<div class="bar"><span>連続正解 <b>${S.streak}</b>（最高 ${S.best}）</span><span>苦手 <b>${wc}</b> 問</span><button class="btn small" data-act="settings">設定</button></div>`;
+ h+='<div class="grid">';
+ TYPES.forEach((T,i)=>{
+  const open=typeOpen(i);
+  let inner=T.name;
+  if(!open) inner+='<small>未開放</small>';
+  else inner+='<div class="dots">'+MODES.map(m=>`<i class="${modeDone(T.id,m.id)?'on':''}"></i>`).join('')+'</div>';
+  if(passed(T.id)) inner+='<div class="hanko">合格</div>';
+  h+=`<button class="frame ${open?'':'locked'}" data-act="type" data-i="${i}" ${open?'':'disabled'}>${inner}</button>`;
+ });
+ h+='</div>';
+ if(wc) h+=`<button class="btn shu next" data-act="review">苦手を復習する（${wc}問）</button>`;
+ if(TYPES.every(T=>passed(T.id))) h+='<div class="scroll">免許皆伝</div>';
+ h+='<div class="note">教科書の順に、一つの活用ごとに「判別 → 活用表 → 基本形」を終えると合格の判子が押され、次の活用が開きます。間違えた問題は苦手として残り、三回続けて正解すると消えます。</div>';
+ app.innerHTML=h;
+}
+
+/* ====== 画面：活用の種類 ====== */
+function renderType(i){
+ screen='type';curType=i;const T=TYPES[i];
+ let h=`<div class="head"><button class="back" data-act="home">←</button><div class="t">${T.full}</div></div>`;
+ h+=`<div class="patcard">活用語尾：<b>${T.patTxt}</b>${T.memo?`<br>暗記語：${T.memo}`:''}</div>`;
+ MODES.forEach((m,mi)=>{
+  const open=modeOpen(T.id,mi),done=modeDone(T.id,m.id);
+  h+=`<button class="mode ${open?'':'locked'}" data-act="start" data-m="${m.id}" ${open?'':'disabled'}>
+   <div class="num">${'一二三'[mi]}</div><div><div class="mt">${m.name}</div><div class="md">${m.desc}</div></div>
+   <div class="st ${done?'done':''}">${done?'済':(open?'':'未開放')}</div></button>`;
+ });
+ if(passed(T.id)) h+='<div class="stampbig"><div class="hanko">合格</div></div>';
+ app.innerHTML=h;
+}
+
+/* ====== 出題の組み立て ====== */
+function buildSession(tid,mode){
+ const ti=TIDX[tid];
+ if(mode==='h'){
+  const anki=shuffle(ANKI.filter(x=>x.tid===tid));
+  const om=openedMax();
+  const cur=HB.filter(x=>x.tid===tid),prev=HB.filter(x=>TIDX[x.tid]<=om&&x.tid!==tid),un=HB.filter(x=>TIDX[x.tid]>om);
+  let rest;
+  if(!prev.length) rest=pickN(cur,7).concat(pickN(un,3));
+  else rest=pickN(cur,6).concat(pickN(prev,4)).concat(pickN(un,un.length?2:0));
+  return anki.concat(shuffle(rest));
+ }
+ if(mode==='t') return shuffle(pickN(TB.filter(x=>x.tid===tid),4));
+ if(mode==='k') return shuffle(KH.filter(x=>x.tid===tid));
+}
+function startSession(mode){
+ const T=TYPES[curType];
+ Q={tid:T.id,mode,items:buildSession(T.id,mode),idx:0,wrong:[],round:1,inter:false};
+ prep();renderQuiz();
+}
+function startReview(){
+ const ids=shuffle(weakIds()).slice(0,12);
+ Q={review:true,mode:'r',items:ids.map(id=>ITEM_BY_ID[id]),idx:0,wrong:[],round:1,inter:false};
+ prep();renderQuiz();
+}
+function cur(){return Q.items[Q.idx];}
+function prep(){Q.st={step:0,wrong:false,done:false,msg:'',cellMiss:[],showTr:false,picked:null,picked0:null,ok0:null};buildChoices();}
+
+function hbAnswer(it){return TIDX[it.tid]>openedMax()?UNLEARNED:T_(it.tid).full;}
+function hbTypeChoices(){const om=openedMax();const c=TYPES.slice(0,om+1).map(T=>T.full);if(om<TYPES.length-1)c.push(UNLEARNED);return c;}
+
+const CELL_POOL_TYPES=['yodan','shimo2','kami2','kami1','shimo1','sa','na','ra'];
+function tableChoices(it,step){
+ const corr=it.ans[step],R=ROWS[it.row];
+ if(step===0){
+  let cand;
+  if(corr[0]==='（'){const k=corr.slice(1,-1);cand=[k].concat(R.split('').filter(x=>x!==k).map(x=>'（'+x+'）'));}
+  else cand=uniq([it.st+R[2],it.st+R[0],it.st.length>1?it.st.slice(0,-1):'',it.st+R[1],it.st+R[3],'（'+it.st+'）']);
+  cand=cand.filter(x=>x!==corr);
+  return shuffle([corr].concat(shuffle(cand).slice(0,3)));
+ }
+ if(step===7){
+  const groups=[['ア','ヤ','ワ','ハ'],['ザ','ダ','サ','タ'],['カ','ガ','ア'],['バ','ハ','マ'],['ナ','ラ','マ']];
+  const g=groups.find(g=>g.includes(it.row))||[];
+  const forced=shuffle(g.filter(x=>x!==it.row)).map(x=>x+'行');
+  const rest=shuffle(ALL_GYO.map(x=>x+'行').filter(x=>x!==corr&&!forced.includes(x)));
+  return shuffle([corr].concat(forced.concat(rest).slice(0,3)));
+ }
+ if(corr.includes('（')) return shuffle([corr,'きよ','くれ','けよ']);
+ let pool=[];
+ CELL_POOL_TYPES.forEach(id=>pool=pool.concat(formsOf(T_(id),it.row)));
+ if(it.row==='カ') pool=pool.concat(T_('ka').fixed);
+ pool=uniq(pool).filter(x=>x!==corr&&!x.includes('（'));
+ const same=shuffle(pool.filter(x=>x.length===corr.length)),diff=shuffle(pool.filter(x=>x.length!==corr.length));
+ return shuffle([corr].concat(same.concat(diff).slice(0,3)));
+}
+function buildChoices(){
+ const it=cur(),st=Q.st;
+ if(it.kind==='anki'||it.kind==='kh'||it.kind==='yomi') st.choices=shuffle(it.ch);
+ else if(it.kind==='hb') st.choices=st.step===0?shuffle(it.zch):hbTypeChoices();
+ else if(it.kind==='tb') st.choices=tableChoices(it,st.step);
+}
+function correctOf(it){
+ if(it.kind==='hb') return hbAnswer(it);
+ return it.a;
+}
+
+/* ====== 出題画面 ====== */
+function choicesHTML(){
+ const st=Q.st,it=cur();
+ const corr=st.done&&it.kind!=='tb'?correctOf(it):null;
+ const maxLen=Math.max.apply(null,st.choices.map(c=>c.length));
+ const layout=st.choices.length>4?'many':(maxLen>9?'two':'');
+ return `<div class="choices ${layout}">`+st.choices.map((c,i)=>{
+  let cls='ch';
+  if(corr!==null){if(c===corr)cls+=' right';else if(c===st.picked)cls+=' bad';}
+  const fs=c.length>9?'font-size:15px':(c.length>5?'font-size:17px':'');
+  return `<button class="${cls}" data-act="ch" data-i="${i}" ${st.done?'disabled':''} style="${fs}">${c}</button>`;
+ }).join('')+'</div>';
+}
+function verbLabel(it){return it.yomi&&it.yomi!==it.k?`${it.k}<span class="yomi">（${it.yomi}）</span>`:it.k;}
+function hbExplain(it){
+ const T=T_(it.tid),ans=hbAnswer(it);
+ let s=`「${it.z}」→「ず」の直前が <b>${DAN[T.zd]}</b>。`;
+ if(T.memo) s+=`<br>「${it.k}」は <b>${T.full}</b>（暗記語：${T.memo}）`;
+ else s+=`<br>→ <b>${T.full}</b>`;
+ if(it.note) s+=`<br><small>${it.note}</small>`;
+ if(ans===UNLEARNED) s+=`<br><small>（${T.full}はまだ習っていないので「${UNLEARNED}」が正解）</small>`;
+ return s;
+}
+function renderQuiz(){
+ screen='quiz';
+ const title=Q.review?'苦手の復習':`${TYPES[curType].name}・${MODES.find(m=>m.id===Q.mode).name}`;
+ let h=`<div class="head"><button class="back" data-act="quit">←</button><div class="t">${title}</div><div class="n">${Q.round>1?'やり直し ':''}${Q.idx+1} / ${Q.items.length}</div></div>`;
+ if(Q.inter){
+  h+=`<div class="center"><div class="big">間違えた ${Q.items.length} 問を<br>もう一度</div><p class="note">全部正解するまで続きます。</p><button class="btn primary next" data-act="resume">始める</button></div>`;
+  app.innerHTML=h;return;
+ }
+ h+=`<div class="streak">連続正解 ${S.streak}</div>`;
+ const it=cur(),st=Q.st;
+ if(Q.review) h+=`<div class="tag">${T_(it.tid).full}</div>`;
+ if(it.kind==='anki'){
+  h+=`<div class="card"><span class="lbl shu">暗記語</span><div class="q">${it.q}</div></div>`+choicesHTML();
+  if(st.done) h+=`<div class="fb ${st.wrong?'ng':''}">${st.wrong?'✕ 正解は「'+it.a+'」。':'○ 正解。'}${it.note}</div>`;
+ }
+ else if(it.kind==='hb'){
+  h+=`<div class="card"><span class="lbl">判別</span><div class="verb">${verbLabel(it)}</div></div>`;
+  if(st.step===0){h+=`<div class="prompt">打消の「ず」を付けると？</div>`+choicesHTML();}
+  else{
+   h+=`<div class="done0 ${st.ok0?'':'ng'}">「ず」を付けると → <b>${it.z}</b>${st.ok0?'　○':'　✕（選んだのは「'+st.picked0+'」）'}</div>`;
+   h+=`<div class="prompt">では、活用の種類は？</div>`+choicesHTML();
+   if(st.done) h+=`<div class="fb ${st.wrong?'ng':''}">${hbExplain(it)}</div>`;
+  }
+ }
+ else if(it.kind==='tb'){
+  h+=tableHTML(it,st);
+  if(!st.done){
+   const lab=st.step===0?'語幹':st.step===7?'活用する行':FORMS[st.step-1];
+   h+=`<div class="cellmsg">${st.msg||''}</div><div class="prompt">「${lab}」は？</div>`+choicesHTML();
+  } else {
+   const T=T_(it.tid);
+   h+=`<div class="fb ${st.wrong?'ng':''}">${st.wrong?'✕ 赤いマスを間違えました。あとでもう一度出ます。':'○ 全部正解。'}<br>${T.full}は <b>${T.patTxt}</b>。${it.st[0]==='（'?'<br>語幹と語尾の区別がない語は、語幹を（ ）で示す。':''}</div>`;
+  }
+ }
+ else if(it.kind==='kh'||it.kind==='yomi'){
+  h+=`<div class="tatewrap"><div class="tate">${it.s}</div></div><div class="src">（${it.src}）</div>`;
+  h+=st.showTr?`<div class="tr">${it.tr}</div>`:`<div class="center" style="margin-bottom:12px"><button class="btn small" data-act="tr">訳を見る</button></div>`;
+  h+=it.kind==='yomi'?`<div class="prompt">傍線部「${it.u}」の読みは？（現代仮名遣い）</div>`:`<div class="prompt">傍線部「${it.u}」の基本形は？</div>`;
+  h+=choicesHTML();
+  if(st.done) h+=it.kind==='yomi'
+   ?`<div class="fb ${st.wrong?'ng':''}">${st.wrong?'✕ ':'○ '}「${it.u}」の読み → <b>${it.a}</b>（${it.form}・${it.type}）</div>`
+   :`<div class="fb ${st.wrong?'ng':''}">${st.wrong?'✕ ':'○ '}「${it.u}」→ <b>${it.a}</b>（${it.form}・${it.type}）</div>`;
+ }
+ if(st.done) h+=`<button class="btn primary next" data-act="next">次へ</button>`;
+ app.innerHTML=h;
+}
+function tableHTML(it,st){
+ const heads=['基本形','語幹'].concat(FORMS).concat(['行']);
+ let h='<table class="kt"><colgroup><col style="width:15%"><col style="width:12%">'+'<col>'.repeat(7)+'</colgroup>';
+ h+='<tr>'+heads.map(x=>`<th>${x.replace('形','<br>形')}</th>`).join('')+'</tr>';
+ h+='<tr><td class="sub"></td><td class="sub"></td>'+SETSUGO.map(x=>`<td class="sub">${x}</td>`).join('')+'<td class="sub"></td></tr>';
+ h+=`<tr><td class="v kihon" style="${it.k.length>3?'font-size:11px':''}">${it.k}</td>`;
+ for(let i=0;i<8;i++){
+  let cls='v',val='';
+  if(i<st.step){val=it.ans[i];if(st.cellMiss.includes(i))cls+=' miss';}
+  else if(i===st.step&&!st.done){cls+=' cur';val='？';}
+  const fs=i===7?'font-size:13px':(val.length>3?'font-size:11px':(val.length>2?'font-size:14px':''));
+  h+=`<td class="${cls}" style="${fs}">${val}</td>`;
+ }
+ return h+'</tr></table>';
+}
+
+/* ====== 回答処理 ====== */
+function choose(i){
+ const it=cur(),st=Q.st;if(st.done)return;
+ const c=st.choices[i];
+ if(it.kind==='tb'){
+  const corr=it.ans[st.step];
+  if(c!==corr){st.wrong=true;st.cellMiss.push(st.step);st.msg=`✕「${c}」ではなく「${corr}」`;}else st.msg='';
+  st.step++;
+  if(st.step>=8){st.done=true;finishItem(!st.wrong);}else buildChoices();
+  renderQuiz();return;
+ }
+ if(it.kind==='hb'&&st.step===0){
+  st.ok0=c===it.z;st.picked0=c;if(!st.ok0)st.wrong=true;
+  st.step=1;buildChoices();renderQuiz();return;
+ }
+ st.picked=c;if(c!==correctOf(it))st.wrong=true;st.done=true;finishItem(!st.wrong);renderQuiz();
+}
+function finishItem(ok){
+ const it=cur();
+ if(ok){
+  S.streak++;if(S.streak>S.best)S.best=S.streak;
+  if(Q.round===1&&S.weak[it.id]!=null){S.weak[it.id]++;if(S.weak[it.id]>=3)delete S.weak[it.id];}
+  if(MILESTONES[S.streak])fude(MILESTONES[S.streak]);else maru();
+ }else{
+  S.streak=0;S.weak[it.id]=0;Q.wrong.push(it);fx.innerHTML='';
+ }
+ save();
+}
+function next(){
+ Q.idx++;
+ if(Q.idx>=Q.items.length){
+  if(Q.wrong.length){Q.items=shuffle(Q.wrong);Q.wrong=[];Q.idx=0;Q.round++;Q.inter=true;renderQuiz();return;}
+  return finishSession();
+ }
+ prep();renderQuiz();
+}
+function finishSession(){
+ if(Q.review){
+  const left=weakIds().length;
+  app.innerHTML=`<div class="center"><div class="big">復習 おわり</div><p>残りの苦手：${left} 問</p><button class="btn primary next" data-act="home">ホームへ</button></div>`;
+  screen='result';Q=null;return;
+ }
+ const tid=Q.tid,was=passed(tid),wasAll=TYPES.every(T=>passed(T.id));
+ S.cleared[tid]=S.cleared[tid]||{};S.cleared[tid][Q.mode]=true;save();
+ const nowPass=passed(tid),nowAll=TYPES.every(T=>passed(T.id));
+ const mname=MODES.find(m=>m.id===Q.mode).name;
+ let h=`<div class="center"><div class="big">${TYPES[curType].name}・${mname}<br>全問正解</div>`;
+ if(nowPass&&!was){
+  h+='<div class="stampbig"><div class="hanko">合格</div></div><p>'+TYPES[curType].full+'　合格</p>';
+  if(curType<TYPES.length-1) h+=`<p class="note">「${TYPES[curType+1].full}」が開きました。</p>`;
+ }
+ if(nowAll&&!wasAll) h+='<div class="scroll">免許皆伝</div><p>九種すべて合格！</p>';
+ h+=`<button class="btn primary next" data-act="totype">戻る</button></div>`;
+ screen='result';Q=null;app.innerHTML=h;
+}
+
+/* ====== 設定 ====== */
+function renderSettings(){
+ screen='settings';
+ app.innerHTML=`<div class="head"><button class="back" data-act="home">←</button><div class="t">設定</div></div>
+ <div class="set">
+  <button class="btn" data-act="export">進み具合を書き出す（バックアップ）</button>
+  <button class="btn" data-act="import">バックアップを読み込む</button>
+  <button class="btn shu" data-act="reset">最初からやり直す（全消去）</button>
+ </div>
+ <div class="note">進み具合（判子・苦手・連続正解）はこの端末のブラウザに保存されます。Safariの履歴やWebサイトデータを消すと消えるので、ときどき書き出しておいてください。書き出したファイルは「ファイル」アプリに保存できます。<br><br>ホーム画面に追加：Safariの共有ボタン →「ホーム画面に追加」。</div>`;
+}
+function exportData(){
+ const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='kobun-training-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+document.getElementById('imp').addEventListener('change',e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||typeof o.cleared!=='object'||typeof o.weak!=='object')throw 0;
+  S={cleared:o.cleared,weak:o.weak,streak:o.streak|0,best:o.best|0};save();renderHome();notice('読み込みました');}
+  catch(err){notice('このファイルは読み込めません');}};
+ r.readAsText(f);e.target.value='';
+});
+
+/* ====== 確認ダイアログ（アプリ内） ====== */
+const dlg=document.getElementById('dlg');
+function ask(msg,okLabel,onOk,cancelLabel){
+ dlg.querySelector('.msg').innerHTML=msg;
+ const row=dlg.querySelector('.row');row.innerHTML='';
+ if(cancelLabel!==null){const c=document.createElement('button');c.className='btn';c.textContent=cancelLabel||'やめない';c.onclick=()=>dlg.classList.remove('on');row.appendChild(c);}
+ const o=document.createElement('button');o.className='btn primary';o.textContent=okLabel;o.onclick=()=>{dlg.classList.remove('on');onOk&&onOk();};row.appendChild(o);
+ dlg.classList.add('on');
+}
+function notice(msg){ask(msg,'OK',null,null);}
+
+/* ====== 操作 ====== */
+app.addEventListener('click',e=>{
+ const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+ const a=b.dataset.act;
+ if(a==='type')renderType(+b.dataset.i);
+ else if(a==='home')renderHome();
+ else if(a==='start')startSession(b.dataset.m);
+ else if(a==='review')startReview();
+ else if(a==='ch')choose(+b.dataset.i);
+ else if(a==='next')next();
+ else if(a==='resume'){Q.inter=false;prep();renderQuiz();}
+ else if(a==='tr'){Q.st.showTr=true;renderQuiz();}
+ else if(a==='quit'){const rv=Q.review;ask('やめてメニューに戻りますか？<br><small>この回の途中経過は消えます</small>','戻る',()=>{Q=null;fx.innerHTML='';rv?renderHome():renderType(curType);},'続ける');}
+ else if(a==='totype')renderType(curType);
+ else if(a==='settings')renderSettings();
+ else if(a==='export')exportData();
+ else if(a==='import')document.getElementById('imp').click();
+ else if(a==='reset'){ask('判子・苦手・記録をすべて消します。よろしいですか？','消す',()=>{S={cleared:{},weak:{},streak:0,best:0};save();renderHome();},'やめる');}
+});
+fx.addEventListener('animationend',()=>{fx.innerHTML='';},true);
+
+load();renderHome();
+
+</script>
+</body>
+</html>
